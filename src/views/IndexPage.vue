@@ -1,7 +1,7 @@
 <template>
   <div class="index-page">
     <a-input-search
-      v-model:value="searchParams.text"
+      v-model:value="searchText"
       placeholder="input search text"
       enter-button="Search"
       size="large"
@@ -10,13 +10,13 @@
     <!--    {{ JSON.stringify(postList) }}-->
     <MyDivider />
     <a-tabs v-model:activeKey="activeKey" @change="onTabChange">
-      <a-tab-pane key="1" tab="Tab 1">
+      <a-tab-pane key="post" tab="Tab 1">
         <PostList :post-list="postList" />
       </a-tab-pane>
-      <a-tab-pane key="2" tab="Tab 2">
+      <a-tab-pane key="picture" tab="Tab 2">
         <PictureList :picture-list="pictureList" />
       </a-tab-pane>
-      <a-tab-pane key="3" tab="Tab 3">Content of Tab Pane 3</a-tab-pane>
+      <a-tab-pane key="user" tab="Tab 3">Content of Tab Pane 3</a-tab-pane>
     </a-tabs>
   </div>
 </template>
@@ -28,6 +28,7 @@ import MyDivider from "@/components/MyDivider.vue";
 import { useRoute, useRouter } from "vue-router";
 import myAxios from "@/plugins/myAxios";
 import PictureList from "@/components/PictureList.vue";
+import { message } from "ant-design-vue";
 
 // .post("post/get/vo", {
 //   id: "1737644750309183490",
@@ -39,16 +40,58 @@ import PictureList from "@/components/PictureList.vue";
 const postList = ref([]);
 const pictureList = ref([]);
 
+//const activeKey = ref("1");
+const router = useRouter();
+const route = useRoute();
+const activeKey = route.params.category;
+//const searchText = ref(route.params.text);
+const searchText = ref(route.query.text);
+
+const initSearchParams = {
+  type: activeKey,
+  text: "",
+  pageSize: 10,
+  pageNum: 1,
+};
+
+const searchParams = ref(initSearchParams);
+// //First load
+// loadData(initSearchParams);
+
+// alert(route.params.category);
+
+const loadAllData = (params: any) => {
+  const query = {
+    ...params,
+    searchText: params.text,
+  };
+  myAxios.post("search/all", query).then((res: any) => {
+    postList.value = res.postList();
+    pictureList.value = res.pictureList();
+  });
+};
+
 const loadData = (params: any) => {
+  // const type = activeKey;   faster than loadData
+  const { type } = params;
+  // alert("type: " + type);
+  // console.log();
+  if (!type) {
+    message.error("Type is null");
+    return;
+  }
   //封装 text -> searchText
-  const searchQuery = {
+  const query = {
     ...params,
     searchText: params.text,
   };
 
-  myAxios.post("/search/all", searchQuery).then((res: any) => {
-    postList.value = res.postList;
-    pictureList.value = res.pictureList;
+  myAxios.post("/search/all", query).then((res: any) => {
+    if (type === "post") {
+      postList.value = res.dataList;
+    } else if (type === "picture") {
+      pictureList.value = res.dataList;
+    }
   });
   // const postQuery = {
   //   ...params,
@@ -67,29 +110,13 @@ const loadData = (params: any) => {
   // });
 };
 
-// const searchText = ref("");
-//const activeKey = ref("1");
-const router = useRouter();
-const route = useRoute();
-const activeKey = route.params.category;
-
-const initSearchParams = {
-  text: "",
-  pageSize: 10,
-  pageNum: 1,
-};
-
-const searchParams = ref(initSearchParams);
-//First load
-loadData(initSearchParams);
-
-// alert(route.params.category);
-
 watchEffect(() => {
   searchParams.value = {
     ...initSearchParams,
     text: route.query.text,
+    type: route.params.category,
   } as any;
+  loadData(searchParams.value);
 });
 const onSearch = (value: string) => {
   //alert(value);
@@ -97,9 +124,12 @@ const onSearch = (value: string) => {
     // query: {
     //   text: value,
     // },
-    query: searchParams.value,
+    query: {
+      ...searchParams.value,
+      text: value,
+    },
   });
-  loadData(searchParams.value);
+  //loadData(searchParams.value);
 };
 
 const onTabChange = (key: string) => {
@@ -107,7 +137,7 @@ const onTabChange = (key: string) => {
     // params: {
     //   category: key,
     // },
-    path: `${key}`,
+    path: `/${key}`,
     // query: {
     //   text: searchText,
     // },
