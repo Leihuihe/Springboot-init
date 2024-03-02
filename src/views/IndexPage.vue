@@ -10,13 +10,13 @@
     <!--    {{ JSON.stringify(postList) }}-->
     <MyDivider />
     <a-tabs v-model:activeKey="activeKey" @change="onTabChange">
-      <a-tab-pane key="post" tab="Tab 1">
+      <a-tab-pane key="post" tab="Post">
         <PostList :post-list="postList" />
       </a-tab-pane>
-      <a-tab-pane key="picture" tab="Tab 2">
+      <a-tab-pane key="picture" tab="Pictures">
         <PictureList :picture-list="pictureList" />
       </a-tab-pane>
-      <a-tab-pane key="user" tab="Tab 3">Content of Tab Pane 3</a-tab-pane>
+      <a-tab-pane key="user" tab="User">Content of Users</a-tab-pane>
     </a-tabs>
   </div>
 </template>
